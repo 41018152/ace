@@ -1,245 +1,118 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>狼兒的網站</title>
   <style>
-    /* 全局樣式 */
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       margin: 0;
-      padding: 0;
-      background: linear-gradient(rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.5)), url('2.jpg') no-repeat center center fixed;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: url('2.jpg') no-repeat center center fixed;
       background-size: cover;
+      position: relative;
     }
 
-    h1, h2 {
-      text-align: center;
-      color: #333;
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(255, 255, 255, 0.5);
+      z-index: -1;
     }
 
     .container {
-      width: 80%;
-      margin: 20px auto;
+      max-width: 900px;
+      margin: auto;
       padding: 20px;
-      background-color: rgba(255, 255, 255, 0.95);
-      border-radius: 15px;
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-      transition: all 0.3s ease;
     }
 
-    .container:hover {
-      transform: scale(1.01);
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 2.5rem;
+      color: #333;
+    }
+
+    .button-group {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-bottom: 30px;
     }
 
     button {
       padding: 12px 24px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 12px;
       background-color: #4CAF50;
       color: white;
-      border: none;
-      border-radius: 8px;
       cursor: pointer;
-      transition: background-color 0.3s ease, transform 0.2s;
+      transition: background-color 0.3s ease;
     }
 
     button:hover {
       background-color: #45a049;
-      transform: scale(1.05);
     }
 
-    input[type="number"], input[type="text"], input[type="date"] {
-      padding: 12px;
-      font-size: 16px;
-      width: 100%;
-      margin: 10px 0;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-
-    /* 按鈕樣式 */
-    .main-btn {
-      background-color: #2196F3;
-    }
-
-    .main-btn:hover {
-      background-color: #0b7dda;
-    }
-
-    .back-btn {
-      background-color: #f44336;
-    }
-
-    .back-btn:hover {
-      background-color: #e53935;
-    }
-
-    /* 區塊樣式 */
-    #money-plan-container, #travel-plan-container, #note-container, #edit-container, #translate-container {
+    .page {
       display: none;
+      padding: 20px;
+      background-color: rgba(255, 255, 255, 0.85);
+      border-radius: 16px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
     }
 
-    .section-title {
-      text-align: center;
-      color: #222;
-      font-weight: bold;
-      font-size: 1.8em;
-      border-bottom: 2px solid #ccc;
-      padding-bottom: 10px;
+    .visible {
+      display: block;
     }
 
-    .content-section {
-      margin-top: 20px;
-    }
-
-    .content-section input,
-    .content-section button {
-      width: 100%;
-      margin-bottom: 10px;
-    }
-
-    .progress-section {
-      font-size: 18px;
-      font-weight: bold;
-      color: #333;
-      padding-top: 10px;
-    }
-
-    /* 響應式設計 */
-    @media (max-width: 768px) {
-      .container {
-        width: 90%;
-        padding: 15px;
+    @media (max-width: 600px) {
+      button {
+        width: 100%;
       }
     }
   </style>
 </head>
 <body>
-
-  <div class="container" id="main-container">
+  <div class="container">
     <h1>狼兒的網站</h1>
-    <button id="travel-plan-btn" class="main-btn">旅遊計畫</button>
-    <button id="money-plan-btn" class="main-btn">存錢規劃</button>
-    <button id="note-btn" class="main-btn">備忘錄</button>
-    <button id="translate-btn" class="main-btn">翻譯功能</button>  <!-- 新增翻譯功能按鈕 -->
-    <button id="edit-btn" class="main-btn">編輯網頁</button>
-  </div>
-
-  <!-- 旅遊計畫頁面 -->
-  <div id="travel-plan-container" class="container">
-    <button id="back-to-main" class="back-btn">返回</button>
-    <h2 class="section-title">旅遊計劃</h2>
-    <div id="daily-plans"></div>
-    <button id="add-day" class="main-btn">新增天數</button>
-  </div>
-
-  <!-- 存錢規劃頁面 -->
-  <div id="money-plan-container" class="container">
-    <button id="back-to-main-money" class="back-btn">返回</button>
-    <h2 class="section-title">存錢規劃</h2>
-    <div class="content-section">
-      <label for="savings-goal">儲蓄目標：$</label>
-      <input type="number" id="savings-goal" placeholder="設定儲蓄目標">
+    <div class="button-group">
+      <button onclick="showPage('plan')">旅遊計畫</button>
+      <button onclick="showPage('note')">備忘錄</button>
+      <button onclick="showPage('translate')">圖片翻譯</button>
     </div>
-    <div class="content-section">
-      <label for="current-savings">目前儲蓄：$</label>
-      <input type="number" id="current-savings" placeholder="輸入目前儲蓄金額">
-    </div>
-    <div class="content-section">
-      <label for="monthly-contribution">每月儲蓄金額：$</label>
-      <input type="number" id="monthly-contribution" placeholder="輸入每月儲蓄金額">
-    </div>
-    <div class="content-section">
-      <button id="save-money-plan" class="main-btn">儲存計劃</button>
-    </div>
-    <div class="progress-section" id="progress-display">尚未設定儲蓄計劃</div>
-  </div>
 
-  <!-- 備忘錄頁面 -->
-  <div id="note-container" class="container">
-    <button id="back-to-main-note" class="back-btn">返回</button>
-    <h2 class="section-title">備忘錄</h2>
-    <div id="note-list"></div>
-    <button id="add-note" class="main-btn">新增備忘錄</button>
-  </div>
+    <div id="plan" class="page">
+      <iframe src="travel_plan.html" width="100%" height="1000px" style="border: none;"></iframe>
+      <button onclick="showHome()">返回主選單</button>
+    </div>
 
-  <!-- 編輯網頁 -->
-  <div id="edit-container" class="container">
-    <button id="back-to-main-edit" class="back-btn">返回</button>
-    <h2 class="section-title">編輯網頁 HTML</h2>
-    <div id="edit-buttons">
-      <button id="open-html-editor" class="main-btn">開啟編輯器</button>
+    <div id="note" class="page">
+      <div id="noteContainer"></div>
+      <button onclick="showHome()">返回主選單</button>
+    </div>
+
+    <div id="translate" class="page">
+      <div id="translateContainer"></div>
+      <button onclick="showHome()">返回主選單</button>
     </div>
   </div>
 
-  <!-- 翻譯功能頁面 -->
-  <div id="translate-container" class="container">
-    <button id="back-to-main-translate" class="back-btn">返回</button>
-    <h2 class="section-title">翻譯功能</h2>
-    <!-- 可以在這裡加入翻譯功能的按鈕、鏡頭、相冊等控制元素 -->
-    <button id="open-camera" class="main-btn">開啟手機鏡頭</button>
-    <button id="take-photo" class="main-btn">拍照</button>
-    <button id="upload-photo" class="main-btn">上傳照片</button>
-    <button id="translate-image" class="main-btn">翻譯圖片</button>
-    <div id="translation-result"></div>
-  </div>
-
-  <script src="money-plan.js"></script>
-  <script src="edit-html.js"></script>
   <script>
-    document.getElementById("travel-plan-btn").onclick = function() {
-      document.getElementById("travel-plan-container").style.display = "block";
-      document.getElementById("main-container").style.display = "none";
-    };
+    function showPage(pageId) {
+      document.querySelectorAll(".page").forEach(p => p.classList.remove("visible"));
+      document.getElementById(pageId).classList.add("visible");
+    }
 
-    document.getElementById("money-plan-btn").onclick = function() {
-      document.getElementById("money-plan-container").style.display = "block";
-      document.getElementById("main-container").style.display = "none";
-    };
-
-    document.getElementById("note-btn").onclick = function() {
-      document.getElementById("note-container").style.display = "block";
-      document.getElementById("main-container").style.display = "none";
-    };
-
-    document.getElementById("translate-btn").onclick = function() {   // 點擊翻譯按鈕時顯示翻譯頁面
-      document.getElementById("translate-container").style.display = "block";
-      document.getElementById("main-container").style.display = "none";
-    };
-
-    document.getElementById("edit-btn").onclick = function() {
-      document.getElementById("edit-container").style.display = "block";
-      document.getElementById("main-container").style.display = "none";
-    };
-
-    document.getElementById("back-to-main").onclick = function() {
-      document.getElementById("travel-plan-container").style.display = "none";
-      document.getElementById("main-container").style.display = "block";
-    };
-
-    document.getElementById("back-to-main-money").onclick = function() {
-      document.getElementById("money-plan-container").style.display = "none";
-      document.getElementById("main-container").style.display = "block";
-    };
-
-    document.getElementById("back-to-main-note").onclick = function() {
-      document.getElementById("note-container").style.display = "none";
-      document.getElementById("main-container").style.display = "block";
-    };
-
-    document.getElementById("back-to-main-edit").onclick = function() {
-      document.getElementById("edit-container").style.display = "none";
-      document.getElementById("main-container").style.display = "block";
-    };
-
-    document.getElementById("back-to-main-translate").onclick = function() {
-      document.getElementById("translate-container").style.display = "none";
-      document.getElementById("main-container").style.display = "block";
-    };
+    function showHome() {
+      document.querySelectorAll(".page").forEach(p => p.classList.remove("visible"));
+    }
   </script>
-
 </body>
 </html>
-
-
