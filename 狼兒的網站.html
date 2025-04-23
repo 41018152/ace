@@ -8,35 +8,12 @@
     body {
       margin: 0;
       font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      background: url('2.jpg') no-repeat center center fixed;
-      background-size: cover;
-      position: relative;
     }
-
-    body::before {
-      content: "";
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background-color: rgba(255, 255, 255, 0.5);
-      z-index: -1;
-    }
-
     .container {
-      max-width: 900px;
+      max-width: 1000px;
       margin: auto;
       padding: 20px;
     }
-
-    h1 {
-      text-align: center;
-      margin-bottom: 30px;
-      font-size: 2.5rem;
-      color: #333;
-    }
-
     .button-group {
       display: flex;
       justify-content: center;
@@ -44,7 +21,6 @@
       gap: 15px;
       margin-bottom: 30px;
     }
-
     button {
       padding: 12px 24px;
       font-size: 1rem;
@@ -55,27 +31,62 @@
       cursor: pointer;
       transition: background-color 0.3s ease;
     }
-
     button:hover {
       background-color: #45a049;
     }
-
-    .page {
+    .section {
+      margin-bottom: 30px;
+    }
+    .day-section {
+      margin-bottom: 20px;
+    }
+    .entry {
+      margin: 10px 0;
+    }
+    #camera-container {
       display: none;
-      padding: 20px;
-      background-color: rgba(255, 255, 255, 0.85);
-      border-radius: 16px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      position: relative;
+      margin: 20px 0;
     }
-
-    .visible {
-      display: block;
+    video {
+      width: 100%;
+      height: auto;
+      border: 1px solid #ccc;
     }
-
-    @media (max-width: 600px) {
-      button {
-        width: 100%;
-      }
+    #capture-btn {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 10px 20px;
+      background-color: #f44336;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    #output-image {
+      width: 100%;
+      height: auto;
+      margin-top: 20px;
+    }
+    #file-input {
+      margin-top: 20px;
+    }
+    #translated-text {
+      margin-top: 20px;
+    }
+    .save-btn {
+      background-color: #4CAF50;
+    }
+    .delete-btn {
+      background-color: #f44336;
+    }
+    .done-btn {
+      background-color: #008CBA;
+    }
+    .edit-btn {
+      background-color: #FF9800;
     }
   </style>
 </head>
@@ -83,35 +94,336 @@
   <div class="container">
     <h1>狼兒的網站</h1>
     <div class="button-group">
-      <button onclick="showPage('plan')">旅遊計畫</button>
-      <button onclick="showPage('note')">備忘錄</button>
-      <button onclick="showPage('translate')">圖片翻譯</button>
+      <button onclick="showTravelPlan()">旅遊計劃</button>
+      <button onclick="showMemo()">備忘錄</button>
+      <button onclick="openCamera()">開啟鏡頭</button>
+      <button onclick="openGallery()">開啟圖庫</button>
     </div>
 
-    <div id="plan" class="page">
-      <iframe src="travel_plan.html" width="100%" height="1000px" style="border: none;"></iframe>
-      <button onclick="showHome()">返回主選單</button>
+    <!-- 旅遊計劃 -->
+    <div id="travel-plan" class="section" style="display: none;">
+      <h2>旅遊計劃</h2>
+      <div id="plan-container"></div>
+      <button onclick="addDay()">新增天數</button>
     </div>
 
-    <div id="note" class="page">
-      <div id="noteContainer"></div>
-      <button onclick="showHome()">返回主選單</button>
+    <!-- 備忘錄 -->
+    <div id="memo" class="section" style="display: none;">
+      <h2>備忘錄</h2>
+      <ul id="memo-list"></ul>
+      <button onclick="addMemo()">新增備忘錄</button>
     </div>
 
-    <div id="translate" class="page">
-      <div id="translateContainer"></div>
-      <button onclick="showHome()">返回主選單</button>
+    <!-- 鏡頭容器 -->
+    <div id="camera-container">
+      <video id="camera" autoplay></video>
+      <button id="capture-btn" onclick="capturePhoto()">擷取</button>
     </div>
+
+    <!-- 圖片輸入 -->
+    <input type="file" id="file-input" accept="image/*" onchange="loadImageFromFile(event)" style="display: none;" />
+
+    <!-- 顯示拍攝的圖片 -->
+    <img id="output-image" src="" alt="Captured Image" style="display:none;">
+
+    <!-- 翻譯結果顯示區域 -->
+    <div id="translated-text"></div>
   </div>
 
   <script>
-    function showPage(pageId) {
-      document.querySelectorAll(".page").forEach(p => p.classList.remove("visible"));
-      document.getElementById(pageId).classList.add("visible");
+    let cameraStream = null;
+    const days = 4;
+    const budgetData = JSON.parse(localStorage.getItem('budgets') || '{}');
+
+    // 旅遊計劃
+    function showTravelPlan() {
+      document.getElementById('travel-plan').style.display = 'block';
+      document.getElementById('memo').style.display = 'none';
+      loadTravelPlan();
     }
 
-    function showHome() {
-      document.querySelectorAll(".page").forEach(p => p.classList.remove("visible"));
+    function loadTravelPlan() {
+      const container = document.getElementById('plan-container');
+      container.innerHTML = '';  // 清空現有內容
+
+      for (let d = 1; d <= days; d++) {
+        const section = document.createElement('div');
+        section.className = 'day-section';
+
+        const title = document.createElement('h3');
+        title.textContent = `第 ${d} 天`;
+        section.appendChild(title);
+
+        const entriesContainer = document.createElement('div');
+        section.appendChild(entriesContainer);
+
+        const data = loadData(d);
+        if (data.length === 0) {
+          data.push({ place: '', time: '', map: '', done: false });
+          saveData(d, data);
+        }
+
+        data.forEach((_, i) => createEntry(d, data, i, entriesContainer));
+
+        const addBtn = document.createElement('button');
+        addBtn.textContent = '新增景點';
+        addBtn.className = 'save-btn';
+        addBtn.onclick = () => {
+          data.push({ place: '', time: '', map: '', done: false });
+          createEntry(d, data, data.length - 1, entriesContainer);
+          saveData(d, data);
+        };
+
+        section.appendChild(addBtn);
+        container.appendChild(section);
+      }
+    }
+
+    function loadData(day) {
+      const data = localStorage.getItem(`day${day}-entries`);
+      return data ? JSON.parse(data) : [];
+    }
+
+    function saveData(day, data) {
+      localStorage.setItem(`day${day}-entries`, JSON.stringify(data));
+    }
+
+    function createEntry(day, data, index, container) {
+      const entryDiv = document.createElement('div');
+      entryDiv.className = 'entry';
+
+      const displaySpan = document.createElement('span');
+      const inputPlace = document.createElement('input');
+      const inputTime = document.createElement('input');
+      const inputMap = document.createElement('input');
+
+      inputPlace.type = inputTime.type = inputMap.type = 'text';
+      inputPlace.placeholder = '景點';
+      inputTime.placeholder = '時間';
+      inputMap.placeholder = '地圖連結';
+
+      const editBtn = document.createElement('button');
+      const saveBtn = document.createElement('button');
+      const delBtn = document.createElement('button');
+      const doneBtn = document.createElement('button');
+
+      editBtn.textContent = '編輯';
+      saveBtn.textContent = '完成';
+      delBtn.textContent = '刪除';
+      doneBtn.textContent = '觀光完成';
+
+      editBtn.className = 'edit-btn';
+      saveBtn.className = 'save-btn';
+      delBtn.className = 'delete-btn';
+      doneBtn.className = 'done-btn';
+
+      function renderDisplay() {
+        const d = data[index];
+        displaySpan.innerHTML = `景點: ${d.place}，時間: ${d.time}，<a href="${d.map}" target="_blank">地圖</a>`;
+        displaySpan.className = d.done ? 'done' : '';
+      }
+
+      editBtn.onclick = () => {
+        const d = data[index];
+        inputPlace.value = d.place;
+        inputTime.value = d.time;
+        inputMap.value = d.map;
+
+        displaySpan.style.display = 'none';
+        inputPlace.style.display = 'inline';
+        inputTime.style.display = 'inline';
+        inputMap.style.display = 'inline';
+        saveBtn.style.display = 'inline';
+        editBtn.style.display = 'none';
+      };
+
+      saveBtn.onclick = () => {
+        data[index] = {
+          place: inputPlace.value,
+          time: inputTime.value,
+          map: inputMap.value,
+          done: false
+        };
+        saveData(day, data);
+        renderDisplay();
+        displaySpan.style.display = 'inline';
+        inputPlace.style.display = 'none';
+        inputTime.style.display = 'none';
+        inputMap.style.display = 'none';
+        saveBtn.style.display = 'none';
+        editBtn.style.display = 'inline';
+      };
+
+      delBtn.onclick = () => {
+        data.splice(index, 1);
+        saveData(day, data);
+        container.innerHTML = '';
+        data.forEach((_, i) => createEntry(day, data, i, container));
+      };
+
+      doneBtn.onclick = () => {
+        data[index].done = !data[index].done;
+        saveData(day, data);
+        renderDisplay();
+      };
+
+      entryDiv.appendChild(displaySpan);
+      entryDiv.appendChild(inputPlace);
+      entryDiv.appendChild(inputTime);
+      entryDiv.appendChild(inputMap);
+      entryDiv.appendChild(editBtn);
+      entryDiv.appendChild(saveBtn);
+      entryDiv.appendChild(doneBtn);
+      entryDiv.appendChild(delBtn);
+
+      inputPlace.style.display = 'none';
+      inputTime.style.display = 'none';
+      inputMap.style.display = 'none';
+      saveBtn.style.display = 'none';
+      doneBtn.style.display = 'none';
+
+      container.appendChild(entryDiv);
+      renderDisplay();
+    }
+
+    // 備忘錄
+    function showMemo() {
+      document.getElementById('travel-plan').style.display = 'none';
+      document.getElementById('memo').style.display = 'block';
+      loadMemo();
+    }
+
+    function loadMemo() {
+      const memoList = document.getElementById('memo-list');
+      memoList.innerHTML = ''; // 清空現有備忘錄
+
+      const memos = JSON.parse(localStorage.getItem('memos') || '[]');
+      memos.forEach((memo, index) => {
+        const memoItem = document.createElement('li');
+        memoItem.className = 'memo-item';
+
+        const memoContent = document.createElement('span');
+        memoContent.textContent = memo.content;
+
+        const editButton = document.createElement('button');
+        editButton.textContent = '編輯';
+        editButton.className = 'edit-btn';
+        editButton.onclick = () => editMemo(index);
+
+        const deleteButton = document.createElement('button');
+        deleteButton.textContent = '刪除';
+        deleteButton.className = 'delete-btn';
+        deleteButton.onclick = () => deleteMemo(index);
+
+        const doneButton = document.createElement('button');
+        doneButton.textContent = '完成';
+        doneButton.className = 'done-btn';
+        doneButton.onclick = () => toggleMemoDone(index);
+
+        memoItem.appendChild(memoContent);
+        memoItem.appendChild(editButton);
+        memoItem.appendChild(deleteButton);
+        memoItem.appendChild(doneButton);
+
+        if (memo.done) {
+          memoContent.style.textDecoration = 'line-through';
+        }
+
+        memoList.appendChild(memoItem);
+      });
+    }
+
+    function addMemo() {
+      const content = prompt("請輸入備忘錄內容");
+      if (content) {
+        const memos = JSON.parse(localStorage.getItem('memos') || '[]');
+        memos.push({ content, done: false });
+        localStorage.setItem('memos', JSON.stringify(memos));
+        loadMemo();
+      }
+    }
+
+    function editMemo(index) {
+      const memos = JSON.parse(localStorage.getItem('memos'));
+      const newContent = prompt("編輯備忘錄內容", memos[index].content);
+      if (newContent !== null) {
+        memos[index].content = newContent;
+        localStorage.setItem('memos', JSON.stringify(memos));
+        loadMemo();
+      }
+    }
+
+    function deleteMemo(index) {
+      const memos = JSON.parse(localStorage.getItem('memos'));
+      memos.splice(index, 1);
+      localStorage.setItem('memos', JSON.stringify(memos));
+      loadMemo();
+    }
+
+    function toggleMemoDone(index) {
+      const memos = JSON.parse(localStorage.getItem('memos'));
+      memos[index].done = !memos[index].done;
+      localStorage.setItem('memos', JSON.stringify(memos));
+      loadMemo();
+    }
+
+    // 鏡頭功能
+    function openCamera() {
+      document.getElementById('camera-container').style.display = 'block';
+      document.getElementById('file-input').style.display = 'none';
+
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then((stream) => {
+          cameraStream = stream;
+          document.getElementById('camera').srcObject = stream;
+        })
+        .catch((err) => {
+          alert("無法開啟鏡頭：" + err);
+        });
+    }
+
+    function capturePhoto() {
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      const video = document.getElementById('camera');
+
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      const imageData = canvas.toDataURL('image/png');
+      document.getElementById('output-image').src = imageData;
+      document.getElementById('output-image').style.display = 'block';
+    }
+
+    // 圖庫上傳
+    function openGallery() {
+      document.getElementById('file-input').style.display = 'block';
+      document.getElementById('camera-container').style.display = 'none';
+    }
+
+    function loadImageFromFile(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const image = new Image();
+          image.src = e.target.result;
+          image.onload = function() {
+            document.getElementById('output-image').src = image.src;
+            document.getElementById('output-image').style.display = 'block';
+          };
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    // 返回主選單
+    function backToMainMenu() {
+      document.getElementById('travel-plan').style.display = 'none';
+      document.getElementById('memo').style.display = 'none';
+      document.getElementById('camera-container').style.display = 'none';
+      document.getElementById('file-input').style.display = 'none';
     }
   </script>
 </body>
